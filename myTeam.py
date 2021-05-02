@@ -16,13 +16,15 @@ from captureAgents import CaptureAgent
 import random, time, util
 from game import Directions
 import game
+from util import nearestPoint
+from game import Grid
 
 #################
 # Team creation #
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'DummyAgent', second = 'DummyAgent'):
+               first = 'DefensiveAgent', second = 'DefensiveAgent'):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -90,3 +92,67 @@ class DummyAgent(CaptureAgent):
 
     return random.choice(actions)
 
+
+class DefensiveAgent(CaptureAgent):
+ 
+    def registerInitialState(self, gameState):
+        CaptureAgent.registerInitialState(self, gameState)
+        self.myAgents = CaptureAgent.getTeam(self, gameState)
+        self.opAgents = CaptureAgent.getOpponents(self, gameState)
+        self.myFoods = CaptureAgent.getFood(self, gameState).asList()
+        self.opFoods = CaptureAgent.getFoodYouAreDefending(self, gameState).asList()
+        self.start = gameState.getAgentPosition(self.index)
+        self.teamStart = [gameState.getInitialAgentPosition(i) for i in self.myAgents]
+        self.opsStart = [gameState.getInitialAgentPosition(i) for i in self.opAgents]
+
+        self.walls = gameState.getWalls()
+        corner = self.walls.asList()[-1]
+        self.width = corner[0] + 1
+        self.height = corner[1] + 1
+        if self.red:
+            half = self.width // 2 - 1
+        else:
+            half = self.width // 2
+        self.borderPoints = []
+        for i in range(self.height):
+            if not self.walls[half][i]:
+                self.borderPoints.append((half, i))
+
+    def getSuccessor(self, gameState, action):
+        successor = gameState.generateSuccessor(self.index, action)
+        pos = successor.getAgentState(self.index).getPosition()
+        if pos != nearestPoint(pos):
+            return successor.generateSuccessor(self.index, action)
+        return successor
+
+    def getFeatures(self, gameState, action):
+        features = util.Counter()
+        successor = self.getSuccessor(gameState, action)
+        state = successor.getAgentState(self.index)
+        pos = state.getPosition()
+
+        features['onDefense'] = 1
+        if state.isPacman:
+            features['onDefense'] = 0
+        distsToBorder = [self.getMazeDistance(pos, x) for x in self.borderPoints]
+        features['borderDistance'] = sum(distsToBorder)
+
+        return features
+
+    def getWeights(self, gameState, action):
+        return {'onDefense': 50000, 'borderDistance' : -100}
+
+    def evaluate(self, gameState, action):
+        features = self.getFeatures(gameState, action)
+        weights = self.getWeights(gameState, action)
+        return features * weights
+        
+    def chooseAction(self, gameState):
+        agentPos = gameState.getAgentPosition(self.index)
+        actions = gameState.getLegalActions(self.index)
+
+        values = [self.evaluate(gameState, a) for a in actions]
+        maxValue = max(values)
+        bestActions = [a for a, v in zip(actions, values) if v == maxValue]
+
+        return random.choice(actions)
