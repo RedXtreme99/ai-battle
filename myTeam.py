@@ -1,4 +1,4 @@
-# baselineTeam.py
+# myTeam.py
 # ---------------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -11,15 +11,6 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
-# baselineTeam.py
-# ---------------
-# Licensing Information: Please do not distribute or publish solutions to this
-# project. You are free to use and extend these projects for educational
-# purposes. The Pacman AI projects were developed at UC Berkeley, primarily by
-# John DeNero (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
-# For more info, see http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
-
 from captureAgents import CaptureAgent
 import distanceCalculator
 import random, time, util, sys
@@ -30,8 +21,6 @@ from util import nearestPoint
 #################
 # Team creation #
 #################
-
-
 
 def createTeam(firstIndex, secondIndex, isRed,
                first='OffensiveAgentTwo', second='DefensiveAgentTwo'):
