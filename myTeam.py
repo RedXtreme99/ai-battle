@@ -121,7 +121,6 @@ class ReflexCaptureAgent(CaptureAgent):
     """
     return {'successorScore': 1.0}
 
-
 class OffensiveAgentOne(ReflexCaptureAgent):
   """
   A reflex agent that seeks food. This is an agent
@@ -132,6 +131,8 @@ class OffensiveAgentOne(ReflexCaptureAgent):
     features = util.Counter()
     successor = self.getSuccessor(gameState, action)
     foodList = self.getFood(successor).asList()
+    capsuleList = self.getCapsules(successor)
+    myPos = successor.getAgentState(self.index).getPosition()
     friendlyFoodList = self.getFoodYouAreDefending(successor).asList()
     features['isPacman'] = 0
     if action == Directions.STOP: features['stop'] = 1
@@ -145,38 +146,53 @@ class OffensiveAgentOne(ReflexCaptureAgent):
     foodInStore = self.startFood - len(foodList)
     
     # Compute distance to the nearest food
-
+    
 
     if len(foodList) > 0: # This should always be True,  but better safe than sorry
-      myPos = successor.getAgentState(self.index).getPosition()
+      
       minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
       features['distanceToFood'] = minDistance
-
+      
     # Compute distance back to team's side (using closest friendly food)
-    distanceHome = min([self.getMazeDistance(myPos, food) for food in friendlyFoodList])
-    features['distanceHome'] = distanceHome
+    #distanceHome = min([self.getMazeDistance(myPos, food) for food in friendlyFoodList])
+    #features['distanceHome'] = distanceHome
 
+    #Compute Distance back to team's side
+    sucBound = min(self.getMazeDistance(myPos, b) for b in self.boundary)
+    features['distanceHome'] = sucBound
+    
     #Look for ghosts and avoid them at all costs if not powered up
     features['enemyDistance'] = 100
     enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
     defenders = [a for a in enemies if (not a.isPacman) and a.getPosition() != None]
-    if len(defenders) > 0 and not enemies[0].scaredTimer > 0:
+    #don't worry about scared ghosts
+    if len(defenders) > 0 and not enemies[0].scaredTimer > 10:
       dists = [self.getMazeDistance(myPos, a.getPosition()) for a in defenders]
       features['enemyDistance'] = min(dists)
       if min(dists) < 5:
         features['distanceHome'] = 20
         features['enemyDistance'] = 0.5*min(dists)
-    if foodInStore >= .2*self.startFood and foodInStore >= 5:
-      if successor.getAgentState(self.index).isPacman:
+    if (foodInStore >= .2*self.startFood and foodInStore >= 5) or foodInStore > 30:
+      if successor.getAgentState(self.index).isPacman and not enemies[0].scaredTimer > 0:
         features['isPacman'] = 0
-      features['distanceHome'] = distanceHome * foodInStore
+      features['distanceHome'] = sucBound * foodInStore
     elif not successor.getAgentState(self.index).isPacman:
       features['distanceHome'] = 0
     else:
       features['distanceHome'] = 1000
+    #eat capsules
+    if len(capsuleList) > 0:
+      capsuleDistance = min([self.getMazeDistance(myPos, cap) for cap in capsuleList])
+      features['DistanceToCapsule'] = capsuleDistance
+    else:
+      features['DistanceToCapsule'] = 0
+    features['capsLeft'] = -len(capsuleList)
 
-
-
+    #If power up is active, try not to eat a capsule
+    if enemies[0].scaredTimer > 10:
+        features['capsLeft'] = 0
+        if len(capsuleList)>0:
+            features['DistanceToCapsule'] = 0
     
     return features
 
@@ -185,11 +201,12 @@ class OffensiveAgentOne(ReflexCaptureAgent):
   def getWeights(self, gameState, action):
     successor = self.getSuccessor(gameState, action)
     #when running out of time, get back to our side
-    if successor.data.timeleft < 100:
-      return {'currentScore': 100, 'successorScore': 1000, 'distanceToFood': -3, 'distanceHome': -100, 'enemyDistance': 10, 'isPacman': 0, 'stop': -100}
-    return {'currentScore': 100, 'successorScore': 1000, 'distanceToFood': -3, 'distanceHome': -1, 'enemyDistance': 5, 'isPacman': 1, 'stop': -100}
-
-
+    myPos = successor.getAgentState(self.index).getPosition()
+    sucBound = min(self.getMazeDistance(myPos, b) for b in self.boundary)
+    if successor.data.timeleft <= sucBound*4+8:
+          return {'currentScore': 100, 'successorScore': 1000, 'distanceToFood': -1, 'distanceHome': -100, 'enemyDistance': 10, 'isPacman': 0, 'stop': -100, 'DistanceToCapsule': -15, 'capsLeft': 500}
+    return {'currentScore': 100, 'successorScore': 1000, 'distanceToFood': -10, 'distanceHome': -1, 'enemyDistance': 5, 'isPacman': 1, 'stop': -100, 'DistanceToCapsule': -15, 'capsLeft': 500}
+ 
 
 class DefensiveAgentOne(ReflexCaptureAgent):
   """
