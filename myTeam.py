@@ -277,14 +277,6 @@ class DefensiveAgentOne(ReflexCaptureAgent):
 
 class DefensiveAgentTwo(ReflexCaptureAgent):
 
-    # Constructor with target and previous food list
-    def __init__(self, index):
-        CaptureAgent.__init__(self, index)
-        self.target = None
-        self.previousFood = None
-        # This variable will store our patrol points and
-        # the agent probability to select a point as target.
-
     # Update estimateed probability that offense will target specific entry points
     def DefendingProbability(self, gameState):
 
@@ -330,7 +322,8 @@ class DefensiveAgentTwo(ReflexCaptureAgent):
 
         CaptureAgent.registerInitialState(self, gameState)
         self.distancer.getMazeDistances()
-
+        self.target = None
+        self.previousFood = None
         # Compute central positions without walls from map layout.
         # The defender will walk among these positions to defend
         # its territory.
@@ -402,3 +395,4 @@ class DefensiveAgentTwo(ReflexCaptureAgent):
         ties = filter(lambda x: x[0] == best, zip(fvalues, feasible))
 
         return random.choice(ties)[1]
+
