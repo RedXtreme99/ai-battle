@@ -380,20 +380,6 @@ class DefensiveAgentTwo(ReflexCaptureAgent):
                 self.target = eaten.pop()
         self.previousFood = defendingFoodList
 
-        # If we will be scared for a while, target enemy food
-        if currentState.scaredTimer > 0:
-            enemyFood = self.getFood(gameState).asList()
-            closestFoodDistance, targetFood = min([(self.getMazeDistance(currentPosition, food), food) for food in enemyFood])
-            if closestFoodDistance < currentState.scaredTimer:
-                self.target = targetFood
-                actions = gameState.getLegalActions(self.index)
-                move = [a for a in actions if not a == Directions.STOP]
-                moveVals = [self.getMazeDistance(gameState.generateSuccessor(self.index, a).getAgentPosition(self.index), self.target) for a in move]
-                best = min(moveVals)
-                bestMoves = filter(lambda x: x[0] == best, zip(moveVals, move))
-                return random.choice(bestMoves)[1]
-
-
         # Set a new target
         if self.target == None and len(defendingFoodList) <= 4:
             food = defendingFoodList + defendingCapsuleList
