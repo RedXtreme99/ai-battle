@@ -58,7 +58,7 @@ class ReflexCaptureAgent(CaptureAgent):
         middle = gameState.data.layout.width // 2 - 1
     else:
         middle = gameState.data.layout.width  // 2
-    self.boundary= []
+    self.boundary = []
     for i in range(1, gameState.data.layout.height - 1):
         if not gameState.hasWall(middle, i):
             self.boundary.append((middle, i))
@@ -333,7 +333,7 @@ class DefensiveAgentTwo(ReflexCaptureAgent):
             middle = gameState.data.layout.width // 2 - 1
         else:
             middle = gameState.data.layout.width  // 2
-        self.boundary= []
+        self.boundary = []
         for i in range(1, gameState.data.layout.height - 1):
             if not gameState.hasWall(middle, i):
                 self.boundary.append((middle, i))
@@ -369,9 +369,12 @@ class DefensiveAgentTwo(ReflexCaptureAgent):
             minDis, self.target = min([(self.getMazeDistance(currentPosition, opPosition), opPosition) for opPosition in positions])
         elif self.previousFood != None:
             eaten = [food for food in self.previousFood if food not in defendingFoodList]
-            if len(eaten) > 0:
+            if len(eaten) > 0 and currentState.scaredTimer <= 0:
                 self.target = eaten.pop()
         self.previousFood = defendingFoodList
+
+        if currentState.scaredTimer > 0:
+            self.target = None
 
         # Set a new target
         if self.target == None and len(defendingFoodList) <= 4:
